@@ -1,0 +1,6 @@
+{
+  "name": "AetherOS: JWST",
+  "description": "Research-grade NASA James Webb Space Telescope (JWST) telemetry, 360° orbital flight simulator, solar MHD flare engine, exoplanet transit light curve inversion, multi-band spectroscopy, gravitational lensing, and FITS data exporter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
