@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { 
   Telescope, Sparkles, Compass, Flame, TrendingUp, Sliders, 
   Orbit, Database, Users, Volume2, VolumeX, Download, Radio, 
@@ -208,6 +209,9 @@ export default function App() {
       <footer className="border-t border-slate-900 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500 font-mono">
         AetherOS: JWST Research-Grade Progressive Web App • NASA James Webb Space Telescope Telemetry & Simulation Engine
       </footer>
+
+      {/* VERCEL WEB ANALYTICS */}
+      <Analytics />
     </div>
   );
 }
