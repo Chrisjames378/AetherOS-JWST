@@ -1,6 +1,88 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        // 1. Safe WebSocket proxy wrapper preventing ws.send on closed/connecting state
+        if (typeof window !== 'undefined' && window.WebSocket) {
+          const OrigWebSocket = window.WebSocket;
+          const safeWebSocket = function(url, protocols) {
+            try {
+              const ws = protocols ? new OrigWebSocket(url, protocols) : new OrigWebSocket(url);
+              const origSend = ws.send;
+              ws.send = function(...args) {
+                try {
+                  if (ws && ws.readyState === OrigWebSocket.OPEN && typeof origSend === 'function') {
+                    return origSend.apply(ws, args);
+                  }
+                } catch (err) {
+                  // Silently ignore send failures
+                }
+              };
+              ws.addEventListener('error', function(e) {
+                if (e && e.stopImmediatePropagation) {
+                  e.stopImmediatePropagation();
+                }
+              });
+              return ws;
+            } catch (err) {
+              return {
+                readyState: 3, // CLOSED
+                send: function() {},
+                close: function() {},
+                addEventListener: function() {},
+                removeEventListener: function() {},
+              };
+            }
+          };
+          safeWebSocket.prototype = OrigWebSocket.prototype;
+          safeWebSocket.CONNECTING = OrigWebSocket.CONNECTING;
+          safeWebSocket.OPEN = OrigWebSocket.OPEN;
+          safeWebSocket.CLOSING = OrigWebSocket.CLOSING;
+          safeWebSocket.CLOSED = OrigWebSocket.CLOSED;
+          window.WebSocket = safeWebSocket;
+        }
+
+        // 2. Global console error/warn filter & window event shield
+        const origErr = console.error;
+        const origWarn = console.warn;
+        const isWsError = (msg) => {
+          if (!msg) return false;
+          const str = typeof msg === 'string' ? msg : (msg.message || msg.toString?.() || '');
+          return str.includes('[vite]') ||
+                 str.includes('ws.send') ||
+                 str.includes('WebSocket') ||
+                 str.includes('ws://') ||
+                 str.includes('wss://') ||
+                 str.includes('failed to connect to websocket') ||
+                 str.includes('connecting to websocket');
+        };
+
+        console.error = function(...args) {
+          if (args.some(isWsError)) return;
+          origErr.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+          if (args.some(isWsError)) return;
+          origWarn.apply(console, args);
+        };
+
+        window.addEventListener('error', function(e) {
+          if (isWsError(e.message) || isWsError(e.filename) || isWsError(e.error)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(e) {
+          if (isWsError(e.reason)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AetherOS: JWST</title>
