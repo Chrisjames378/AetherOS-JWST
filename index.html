@@ -3,29 +3,48 @@
   <head>
     <script>
       (function() {
-        // 1. Safe WebSocket proxy wrapper preventing ws.send on closed/connecting state
+        window.__wsState = { readyState: 1, label: 'CONNECTED' };
+
+        function emitWsState(state) {
+          window.__wsState = state;
+          window.dispatchEvent(new CustomEvent('ws-status-change', { detail: state }));
+        }
+
+        // 1. Safe WebSocket proxy wrapper tracking readyState properties
         if (typeof window !== 'undefined' && window.WebSocket) {
           const OrigWebSocket = window.WebSocket;
           const safeWebSocket = function(url, protocols) {
+            emitWsState({ readyState: 0, label: 'RECONNECTING' });
             try {
               const ws = protocols ? new OrigWebSocket(url, protocols) : new OrigWebSocket(url);
+              
+              ws.addEventListener('open', function() {
+                emitWsState({ readyState: 1, label: 'CONNECTED' });
+              });
+              ws.addEventListener('close', function() {
+                emitWsState({ readyState: 0, label: 'RECONNECTING' });
+              });
+              ws.addEventListener('error', function(e) {
+                emitWsState({ readyState: 0, label: 'RECONNECTING' });
+                if (e && e.stopImmediatePropagation) {
+                  e.stopImmediatePropagation();
+                }
+              });
+
               const origSend = ws.send;
               ws.send = function(...args) {
                 try {
                   if (ws && ws.readyState === OrigWebSocket.OPEN && typeof origSend === 'function') {
+                    emitWsState({ readyState: 1, label: 'CONNECTED' });
                     return origSend.apply(ws, args);
                   }
                 } catch (err) {
                   // Silently ignore send failures
                 }
               };
-              ws.addEventListener('error', function(e) {
-                if (e && e.stopImmediatePropagation) {
-                  e.stopImmediatePropagation();
-                }
-              });
               return ws;
             } catch (err) {
+              emitWsState({ readyState: 0, label: 'RECONNECTING' });
               return {
                 readyState: 3, // CLOSED
                 send: function() {},
@@ -42,6 +61,8 @@
           safeWebSocket.CLOSED = OrigWebSocket.CLOSED;
           window.WebSocket = safeWebSocket;
         }
+        
+        emitWsState({ readyState: 1, label: 'CONNECTED' });
 
         // 2. Global console error/warn filter & window event shield
         const origErr = console.error;

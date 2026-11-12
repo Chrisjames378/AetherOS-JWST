@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "MissionLog": {
+      "title": "Mission Log",
+      "description": "Saved telemetry snapshot and simulation state from JWST spacecraft and Cosmic Canvas.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the mission log author."
+        },
+        "targetName": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Name of the target object or orbital region."
+        },
+        "targetId": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Unique identifier of target celestial body."
+        },
+        "timestampMs": {
+          "type": "number",
+          "description": "Epoch timestamp in milliseconds of the simulation state."
+        },
+        "telemetry": {
+          "type": "object",
+          "description": "Telemetry parameters including distance, orbital speed, mirror temperature, and orientation."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "User observatory notes or research commentary."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of log creation."
+        }
+      },
+      "required": ["userId", "targetName", "timestampMs", "notes"]
+    }
+  },
+  "firestore": {
+    "/mission_logs/{logId}": {
+      "schema": "MissionLog",
+      "description": "Collection of telemetry snapshots and observatory logs saved by users."
+    }
+  }
+}

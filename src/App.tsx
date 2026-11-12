@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Radio, Cpu, Bot, Volume2, VolumeX, Camera, Sparkles } from 'lucide-react';
+import { Radio, Cpu, Bot, Volume2, VolumeX, Camera, Sparkles, BookOpen, Zap } from 'lucide-react';
 import { CosmicCanvas } from './components/CosmicCanvas';
 import { FooterControls } from './components/FooterControls';
 import { ObjectDrawer } from './components/ObjectDrawer';
@@ -15,6 +15,12 @@ import { JWSTLiveViewfinder } from './components/JWSTLiveViewfinder';
 import { JWSTMissionControl } from './components/JWSTMissionControl';
 import { AetherosPortalModal } from './components/AetherosPortalModal';
 import { CommercialSuiteModal } from './components/CommercialSuiteModal';
+import { WSStatusBadge } from './components/WSStatusBadge';
+import { VoiceAssistantModal } from './components/VoiceAssistantModal';
+import { MissionLogbookModal } from './components/MissionLogbookModal';
+import { PhysicsSandboxModal } from './components/PhysicsSandboxModal';
+import { GimbalHUD } from './components/GimbalHUD';
+import { AuthBar } from './components/AuthBar';
 import { ModalWrapper } from './components/tools/ModalWrapper';
 import { FlareTool } from './components/tools/FlareTool';
 import { TransitTool } from './components/tools/TransitTool';
@@ -37,7 +43,7 @@ export default function App() {
 
   // Active modal views
   const [activeModal, setActiveModal] = useState<
-    'dsn' | 'bench' | 'analyst' | 'viewfinder' | 'jwst_control' | 'flare' | 'transit' | 'spectra' | 'lens' | 'fits' | 'aetheros_portal' | 'commercial' | null
+    'dsn' | 'bench' | 'analyst' | 'viewfinder' | 'jwst_control' | 'flare' | 'transit' | 'spectra' | 'lens' | 'fits' | 'aetheros_portal' | 'commercial' | 'voice_assistant' | 'logbook' | 'physics_sandbox' | null
   >(null);
 
   // Audio drone state
@@ -176,7 +182,52 @@ export default function App() {
             <p className="text-xs text-muted">Drag to look · scroll to zoom</p>
           </div>
 
-          <div className="pointer-events-auto flex flex-wrap justify-end gap-2">
+          <div className="pointer-events-auto flex flex-wrap justify-end gap-2 items-center">
+            <AuthBar />
+            <WSStatusBadge />
+
+            <button
+              type="button"
+              onClick={() => setActiveModal(activeModal === 'physics_sandbox' ? null : 'physics_sandbox')}
+              className={`min-h-10 px-3.5 text-xs font-mono rounded transition-colors flex items-center gap-1.5 shadow-lg ${
+                activeModal === 'physics_sandbox'
+                  ? 'bg-amber-400 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+                  : 'border border-amber-500/60 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25'
+              }`}
+              title="Real-time Physics Sandbox: Adjust G Constant & Light Curve Photometric Noise"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              Physics Sandbox
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveModal(activeModal === 'logbook' ? null : 'logbook')}
+              className={`min-h-10 px-3.5 text-xs font-mono rounded transition-colors flex items-center gap-1.5 shadow-lg ${
+                activeModal === 'logbook'
+                  ? 'bg-amber-400 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+                  : 'border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+              }`}
+              title="View and Save Persistent Firestore Telescope Telemetry Snapshots"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              Mission Logbook
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveModal(activeModal === 'voice_assistant' ? null : 'voice_assistant')}
+              className={`min-h-10 px-3.5 text-xs font-mono rounded transition-colors flex items-center gap-1.5 shadow-lg ${
+                activeModal === 'voice_assistant'
+                  ? 'bg-cyan-400 text-black font-bold shadow-[0_0_15px_rgba(34,211,238,0.6)]'
+                  : 'border border-cyan-500/60 bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25'
+              }`}
+              title="Real-time Voice AI Conversations with gemini-3.8-live"
+            >
+              <Sparkles className="w-3.5 h-3.5 animate-pulse text-cyan-300" />
+              Voice AI (gemini-3.8-live)
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveModal(activeModal === 'commercial' ? null : 'commercial')}
@@ -464,6 +515,33 @@ export default function App() {
           }}
         />
       )}
+
+      {activeModal === 'voice_assistant' && (
+        <VoiceAssistantModal
+          onClose={() => setActiveModal(null)}
+          currentTargetName={selectedSpec ? selectedSpec.name : 'JWST Solar-Earth L2 Orbit'}
+          currentTargetId={selectedSpec ? selectedSpec.id : 'jwst'}
+        />
+      )}
+
+      {activeModal === 'logbook' && (
+        <MissionLogbookModal
+          onClose={() => setActiveModal(null)}
+          currentTargetName={selectedSpec ? selectedSpec.name : 'JWST Solar-Earth L2 Orbit'}
+          currentTargetId={selectedSpec ? selectedSpec.id : 'jwst'}
+          currentTimeMs={currentTimeMs}
+          onFlyToTarget={(targetId) => {
+            handleSelectObject(targetId);
+          }}
+        />
+      )}
+
+      {activeModal === 'physics_sandbox' && (
+        <PhysicsSandboxModal onClose={() => setActiveModal(null)} />
+      )}
+
+      {/* 3D attitude & Ecliptic plane orientation gimbal HUD */}
+      <GimbalHUD currentTimeMs={currentTimeMs} />
     </div>
   );
 }
